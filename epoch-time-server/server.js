@@ -69,18 +69,7 @@ app.post('/data', (req, res) => {
   const data = req.body;
   data.requestTime = Date.now();
 
-  // Duplicate kontrolü yaparak dataArray'e ekleyin
-  let newData = data.data.filter(item => 
-    !dataArray.some(existingData => 
-      existingData.data.some(existingItem => existingItem.unix === item.unix))
-  );
-
-  if (newData.length > 0) {
-    data.data = newData;
-    dataArray.push(data);
-  }
-
-  // Gelen veriyi JSON dosyasına ekleyin
+  // Gelen veriyi JSON dosyasına ekleyin (tekrar eden verileri dikkate almadan)
   let allData = readDataFromFile('data.json').data;
   allData.push(data);
 
@@ -94,11 +83,20 @@ app.post('/data', (req, res) => {
 });
 
 app.get('/data', (req, res) => {
+  // JSON dosyasından veriyi okurken benzersiz verileri filtreleyin
+  const fileData = readDataFromFile('data.json');
+  const uniqueData = fileData.data.reduce((acc, current) => {
+    const exists = acc.some(item => item.data.some(subItem => subItem.unix === current.data[0]?.unix));
+    if (!exists) acc.push(current);
+    return acc;
+  }, []);
+
   // Verileri requestTime'a göre sırala
-  const sortedData = dataArray.sort((a, b) => a.requestTime - b.requestTime);
+  const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
   res.json(sortedData);
 });
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
