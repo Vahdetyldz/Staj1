@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -43,82 +44,7 @@
       <canvas id="chartSH"></canvas>
     </div>
   </div>
-  <script>
-    // Sunucudan verileri almak ve grafik oluşturmak için fonksiyon
-    async function fetchDataAndRenderCharts() {
-      try {
-        const response = await fetch('http://localhost:3000/data');
-        const data = await response.json();
-
-        // Gelen veriyi konsola yazdırma
-        console.log('Received Data:', data);
-
-        // Genel veri dizileri
-        const times = data.map(item => new Date(item.unix * 1000).toLocaleString());
-        const batVs = data.map(item => item.bat_v);
-        const batLs = data.map(item => item.bat_l);
-        const dts = data.flatMap(item => item.data.map(subItem => ({ time: new Date(subItem.unix * 1000).toLocaleString(), dt: subItem.dt })));
-        const sts = data.flatMap(item => item.data.map(subItem => ({ time: new Date(subItem.unix * 1000).toLocaleString(), st: subItem.st })));
-        const shs = data.flatMap(item => item.data.map(subItem => ({ time: new Date(subItem.unix * 1000).toLocaleString(), sh: subItem.sh })));
-
-        // Gelen verileri zamana göre sıralama
-        dts.sort((a, b) => new Date(a.time) - new Date(b.time));
-        sts.sort((a, b) => new Date(a.time) - new Date(b.time));
-        shs.sort((a, b) => new Date(a.time) - new Date(b.time));
-
-        // Bat_v ve Bat_l için istek gönderildiği zamanı kullanma
-        const requestTimes = data.map(item => {
-          const requestTime = new Date(item.requestTime);
-          return requestTime.toLocaleString();
-        });
-
-        // Bat_v Grafiği
-        createChart('chartBatteryVoltage', requestTimes, batVs, 'Battery Voltage', 'rgba(255, 99, 132, 0.6)');
-        // Bat_l Grafiği
-        createChart('chartBatteryLevel', requestTimes, batLs, 'Battery Level', 'rgba(54, 162, 235, 0.6)');
-        // DT Grafiği
-        createChart('chartDT', dts.map(d => d.time), dts.map(d => d.dt), 'DT', 'rgba(75, 192, 192, 0.6)');
-        // ST Grafiği
-        createChart('chartST', sts.map(s => s.time), sts.map(s => s.st), 'ST', 'rgba(153, 102, 255, 0.6)');
-        // SH Grafiği
-        createChart('chartSH', shs.map(s => s.time), shs.map(s => s.sh), 'SH', 'rgba(255, 159, 64, 0.6)');
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    }
-
-    function createChart(canvasId, labels, data, label, color) {
-      const ctx = document.getElementById(canvasId).getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: label,
-            data: data,
-            backgroundColor: color,
-            borderColor: color,
-            borderWidth: 2,
-            fill: false
-          }]
-        },
-        options: {
-          scales: {
-            x: {
-              ticks: {
-                stepSize: 0.1 // remove this line to get autoscaling
-              }
-            },
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    }
-
-    // Sayfa yüklendiğinde grafik oluşturma fonksiyonunu çağır
-    window.onload = fetchDataAndRenderCharts;
-  </script>
+  <script src="charts.js"></script>
 </body>
 </html>
+

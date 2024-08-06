@@ -61,8 +61,11 @@ const readDataFromFile = (filename) => {
   return { data: [], count: 0 };
 };
 
+// JSON dosyasının yolunu tanımlayın
+const dataFilePath = path.join(__dirname, 'public', 'data.json');
+
 // Sunucu başlatıldığında verileri yükle
-const fileData = readDataFromFile('data.json');
+const fileData = readDataFromFile(dataFilePath);
 dataArray = fileData.data;
 
 app.post('/data', (req, res) => {
@@ -70,21 +73,21 @@ app.post('/data', (req, res) => {
   data.requestTime = Date.now();
 
   // Gelen veriyi JSON dosyasına ekleyin (tekrar eden verileri dikkate almadan)
-  let allData = readDataFromFile('data.json').data;
+  let allData = readDataFromFile(dataFilePath).data;
   allData.push(data);
 
   // Veri sayısını ekleyin
   const dataCount = allData.length;
   const jsonDataWithCount = { data: allData, count: dataCount };
 
-  writeDataToFile('data.json', jsonDataWithCount);
+  writeDataToFile(dataFilePath, jsonDataWithCount);
 
   res.status(201).json({ message: 'Data received', data: data });
 });
 
-app.get('/data', (req, res) => {
+/*app.get('/data', (req, res) => {
   // JSON dosyasından veriyi okurken benzersiz verileri filtreleyin
-  const fileData = readDataFromFile('data.json');
+  const fileData = readDataFromFile(dataFilePath);
   const uniqueData = fileData.data.reduce((acc, current) => {
     const exists = acc.some(item => item.data.some(subItem => subItem.unix === current.data[0]?.unix));
     if (!exists) acc.push(current);
@@ -94,9 +97,8 @@ app.get('/data', (req, res) => {
   // Verileri requestTime'a göre sırala
   const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
   res.json(sortedData);
-});
+});*/
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-
