@@ -5,7 +5,10 @@ const fs = require('fs'); // File system modülünü dahil et
 const app = express();
 const port = 3000;
 
+let receivedData=[];
+
 let dataArray = [];
+
 
 // Middleware to handle raw JSON data and convert NaN to strings
 app.use((req, res, next) => {
@@ -61,11 +64,8 @@ const readDataFromFile = (filename) => {
   return { data: [], count: 0 };
 };
 
-// JSON dosyasının yolunu tanımlayın
-const dataFilePath = path.join(__dirname, 'public', 'data.json');
-
 // Sunucu başlatıldığında verileri yükle
-const fileData = readDataFromFile(dataFilePath);
+const fileData = readDataFromFile('data.json');
 dataArray = fileData.data;
 
 app.post('/data', (req, res) => {
@@ -73,31 +73,57 @@ app.post('/data', (req, res) => {
   data.requestTime = Date.now();
 
   // Gelen veriyi JSON dosyasına ekleyin (tekrar eden verileri dikkate almadan)
-  let allData = readDataFromFile(dataFilePath).data;
+  let allData = readDataFromFile('data.json').data;
   allData.push(data);
 
   // Veri sayısını ekleyin
   const dataCount = allData.length;
   const jsonDataWithCount = { data: allData, count: dataCount };
 
-  writeDataToFile(dataFilePath, jsonDataWithCount);
+  writeDataToFile('data.json', jsonDataWithCount);
 
   res.status(201).json({ message: 'Data received', data: data });
 });
 
-/*app.get('/data', (req, res) => {
-  // JSON dosyasından veriyi okurken benzersiz verileri filtreleyin
-  const fileData = readDataFromFile(dataFilePath);
-  const uniqueData = fileData.data.reduce((acc, current) => {
-    const exists = acc.some(item => item.data.some(subItem => subItem.unix === current.data[0]?.unix));
-    if (!exists) acc.push(current);
-    return acc;
-  }, []);
+app.post('/data1', (req, res) => {
+  if (!Array.isArray(req.body)) {
+    console.log("reqbody de sıkıntı var");
+  }
+  receivedData = req.body;
+  res.status(200).send('Veri alındı');
+});
+
+app.get('/data', (req, res) => {
+  if (!Array.isArray(receivedData)) {
+    return res.status(400).json({ error: 'Geçersiz veri formatı' });
+  }
+  console.log('Gelen veri (get /data):', receivedData);
+  
+  // Benzersiz unix değerlerini takip etmek için bir Set oluşturun
+  const uniqueUnixValues = new Set();
+  
+  // Benzersiz veri gruplarını tutacak bir dizi oluşturun
+  const uniqueData = [];
+
+  // Her bir veri grubunu kontrol edin
+  receivedData.forEach(group => {
+    const hasDuplicate = group.data.some(item => uniqueUnixValues.has(item.unix));
+    
+    if (!hasDuplicate) {
+      // Eğer grup içindeki `unix` değerleri benzersizse, bu grubu ekleyin
+      uniqueData.push(group);
+      // Bu grubun `unix` değerlerini Set'e ekleyin
+      group.data.forEach(item => uniqueUnixValues.add(item.unix));
+    }
+  });
 
   // Verileri requestTime'a göre sırala
   const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
+  
+  console.log('Sorted Data:', sortedData);
   res.json(sortedData);
-});*/
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
