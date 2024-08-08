@@ -97,8 +97,8 @@ app.get('/data', (req, res) => {
   if (!Array.isArray(receivedData)) {
     return res.status(400).json({ error: 'Geçersiz veri formatı' });
   }
-  console.log('Gelen veri (get /data):', receivedData);
-  
+  console.log('Gelen veri (get /data):', JSON.stringify(receivedData, null, 2));
+
   // Benzersiz unix değerlerini takip etmek için bir Set oluşturun
   const uniqueUnixValues = new Set();
   
@@ -107,24 +107,35 @@ app.get('/data', (req, res) => {
 
   // Her bir veri grubunu kontrol edin
   receivedData.forEach(group => {
-    const hasDuplicate = group.data.some(item => uniqueUnixValues.has(item.unix));
-    
-    if (!hasDuplicate) {
-      // Eğer grup içindeki `unix` değerleri benzersizse, bu grubu ekleyin
-      uniqueData.push(group);
-      // Bu grubun `unix` değerlerini Set'e ekleyin
-      group.data.forEach(item => uniqueUnixValues.add(item.unix));
+    // Grup içindeki benzersiz data item'lerini tutacak bir dizi
+    const uniqueItems = group.data.filter(item => {
+      if (!uniqueUnixValues.has(item.unix)) {
+        uniqueUnixValues.add(item.unix);
+        return true;
+      }
+      return false;
+    });
+
+    // Eğer benzersiz item'ler varsa, bu grubu ekleyin
+    if (uniqueItems.length > 0) {
+      uniqueData.push({
+        ...group,
+        data: uniqueItems,
+      });
     }
   });
 
   // Verileri requestTime'a göre sırala
   const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
   
-  console.log('Sorted Data:', sortedData);
+  console.log('Sorted Data:', JSON.stringify(sortedData, null, 2));
   res.json(sortedData);
 });
+
 
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
+// bir grubun içindeki tek bir veri aynıysa hiçbir veri ekrana yazdırılmıyor
