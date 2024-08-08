@@ -1,14 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
-const fs = require('fs'); // File system modülünü dahil et
+const fs = require('fs');
 const app = express();
-const port = 3000;
+const port = 3003;
 
 let receivedData = [];
 let dataArray = [];
 
-// Middleware to handle raw JSON data and convert NaN to strings
 app.use((req, res, next) => {
   if (req.headers['content-type'] === 'application/json') {
     let data = '';
@@ -17,7 +16,6 @@ app.use((req, res, next) => {
     });
     req.on('end', () => {
       try {
-        // Replace NaN values with "NaN" strings
         data = data.replace(/:\s*NaN/g, ': "NaN"');
         req.body = JSON.parse(data);
         next();
@@ -30,16 +28,17 @@ app.use((req, res, next) => {
   }
 });
 
-// Statik dosyaları servis et
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ana dizin endpoint'i
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/config', (req, res) => {
+  res.json({
+    baseUrl: `http://localhost:${port}`
+  });
 });
 
-app.get('/config', (req, res) => {
-  res.json({ baseUrl: process.env.BASE_URL || 'http://localhost:3000' });
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/time', (req, res) => {
@@ -47,12 +46,10 @@ app.get('/time', (req, res) => {
   res.json({ epochTime: epochTime });
 });
 
-// JSON dosyasına verileri yazma fonksiyonu
 const writeDataToFile = (filename, content) => {
   fs.writeFileSync(filename, JSON.stringify(content, null, 2), 'utf8');
 };
 
-// JSON dosyasından verileri okuma fonksiyonu
 const readDataFromFile = (filename) => {
   if (fs.existsSync(filename)) {
     try {
@@ -66,7 +63,6 @@ const readDataFromFile = (filename) => {
   return { data: [], count: 0 };
 };
 
-// Sunucu başlatıldığında verileri yükle
 const fileData = readDataFromFile('data.json');
 dataArray = fileData.data;
 
@@ -74,11 +70,9 @@ app.post('/data', (req, res) => {
   const data = req.body;
   data.requestTime = Date.now();
 
-  // Gelen veriyi JSON dosyasına ekleyin (tekrar eden verileri dikkate almadan)
   let allData = readDataFromFile('data.json').data;
   allData.push(data);
 
-  // Veri sayısını ekleyin
   const dataCount = allData.length;
   const jsonDataWithCount = { data: allData, count: dataCount };
 
@@ -101,15 +95,11 @@ app.get('/data', (req, res) => {
   }
   console.log('Gelen veri (get /data):', JSON.stringify(receivedData, null, 2));
 
-  // Benzersiz unix değerlerini takip etmek için bir Set oluşturun
   const uniqueUnixValues = new Set();
 
-  // Benzersiz veri gruplarını tutacak bir dizi oluşturun
   const uniqueData = [];
 
-  // Her bir veri grubunu kontrol edin
   receivedData.forEach(group => {
-    // Grup içindeki benzersiz data item'lerini tutacak bir dizi
     const uniqueItems = group.data.filter(item => {
       if (!uniqueUnixValues.has(item.unix)) {
         uniqueUnixValues.add(item.unix);
@@ -118,7 +108,6 @@ app.get('/data', (req, res) => {
       return false;
     });
 
-    // Eğer benzersiz item'ler varsa, bu grubu ekleyin
     if (uniqueItems.length > 0) {
       uniqueData.push({
         ...group,
@@ -127,7 +116,6 @@ app.get('/data', (req, res) => {
     }
   });
 
-  // Verileri requestTime'a göre sırala
   const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
 
   console.log('Sorted Data:', JSON.stringify(sortedData, null, 2));

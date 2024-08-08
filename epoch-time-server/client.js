@@ -1,22 +1,18 @@
-// Dinamik olarak node-fetch'i import edin
 async function fetchModule() {
   return await import('node-fetch');
 }
 
-// JSON dosyasının yolunu belirtin
 const fs = require('fs');
 const filePath = 'data.json';
 
-// Dinamik URL'yi almak için konfigürasyon isteği yap
 async function getConfig(fetch) {
-  const response = await fetch('http://localhost:3000/config');
+  const response = await fetch('http://localhost:3003/config');
   if (!response.ok) {
     throw new Error('Network response for config was not ok');
   }
   return await response.json();
 }
 
-// JSON dosyasını oku ve doğru formatta olup olmadığını kontrol et
 fs.readFile(filePath, 'utf8', async (err, data) => {
   if (err) {
     console.error('Dosya okunamadı:', err);
@@ -25,7 +21,6 @@ fs.readFile(filePath, 'utf8', async (err, data) => {
 
   try {
     const jsonData = JSON.parse(data);
-    // Verinin array olup olmadığını kontrol et
     if (Array.isArray(jsonData.data)) {
       const fetch = (await fetchModule()).default;
       const config = await getConfig(fetch);
@@ -39,10 +34,8 @@ fs.readFile(filePath, 'utf8', async (err, data) => {
   }
 });
 
-// Veri gönder
 async function sendData(data, fetch, baseUrl) {
   try {
-    // Veriyi gönder
     const response1 = await fetch(`${baseUrl}/data1`, {
       method: 'POST',
       headers: {
