@@ -5,10 +5,8 @@ const fs = require('fs'); // File system modülünü dahil et
 const app = express();
 const port = 3000;
 
-let receivedData=[];
-
+let receivedData = [];
 let dataArray = [];
-
 
 // Middleware to handle raw JSON data and convert NaN to strings
 app.use((req, res, next) => {
@@ -38,6 +36,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Ana dizin endpoint'i
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/config', (req, res) => {
+  res.json({ baseUrl: process.env.BASE_URL || 'http://localhost:3000' });
 });
 
 app.get('/time', (req, res) => {
@@ -101,7 +103,7 @@ app.get('/data', (req, res) => {
 
   // Benzersiz unix değerlerini takip etmek için bir Set oluşturun
   const uniqueUnixValues = new Set();
-  
+
   // Benzersiz veri gruplarını tutacak bir dizi oluşturun
   const uniqueData = [];
 
@@ -127,15 +129,11 @@ app.get('/data', (req, res) => {
 
   // Verileri requestTime'a göre sırala
   const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
-  
+
   console.log('Sorted Data:', JSON.stringify(sortedData, null, 2));
   res.json(sortedData);
 });
 
-
-
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-
-// bir grubun içindeki tek bir veri aynıysa hiçbir veri ekrana yazdırılmıyor
