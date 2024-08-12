@@ -1,3 +1,4 @@
+require('dotenv').config();
 async function fetchModule() {
   return await import('node-fetch');
 }
@@ -6,13 +7,15 @@ const fs = require('fs');
 const filePath = 'data.json';
 
 async function getConfig(fetch) {
-  const response = await fetch('http://localhost:3003/config');
+  const port = process.env.PORT || 3000;  // process.env.PORT kullanarak port alıyoruz
+  const baseUrl = `http://localhost:${port}`;
+  const response = await fetch(`${baseUrl}/config`);
+  console.log(`http://localhost:${process.env.PORT}`);
   if (!response.ok) {
     throw new Error('Network response for config was not ok');
   }
   return await response.json();
 }
-
 fs.readFile(filePath, 'utf8', async (err, data) => {
   if (err) {
     console.error('Dosya okunamadı:', err);
@@ -24,8 +27,8 @@ fs.readFile(filePath, 'utf8', async (err, data) => {
     if (Array.isArray(jsonData.data)) {
       const fetch = (await fetchModule()).default;
       const config = await getConfig(fetch);
-      const baseUrl = config.baseUrl;
-      sendData(jsonData.data, fetch, baseUrl);
+      const baseUrl = `http://localhost:${process.env.PORT || 3000}`;
+      await sendData(jsonData.data, fetch, baseUrl);
     } else {
       console.error('Veri array formatında değil');
     }
@@ -51,6 +54,6 @@ async function sendData(data, fetch, baseUrl) {
     console.log('Veri başarıyla gönderildi');
 
   } catch (error) {
-    console.error('Error sending data:', error);
+    console.error('Veri gönderilirken hata oluştu:', error);
   }
 }

@@ -1,12 +1,18 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 const app = express();
-const port = 3003;
+const port = process.env.PORT || 3000; // 3000 varsayılan port
 
 let receivedData = [];
 let dataArray = [];
+let tempArray = [];
+
+app.get('/config', (req, res) => {
+  res.json({ port: port });
+});
 
 app.use((req, res, next) => {
   if (req.headers['content-type'] === 'application/json') {
@@ -29,12 +35,6 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('/config', (req, res) => {
-  res.json({
-    baseUrl: `http://localhost:${port}`
-  });
-});
 
 
 app.get('/', (req, res) => {
@@ -75,15 +75,27 @@ app.post('/data', (req, res) => {
 
   const dataCount = allData.length;
   const jsonDataWithCount = { data: allData, count: dataCount };
+  
+  dataArray.push(data);
 
   writeDataToFile('data.json', jsonDataWithCount);
+  let newData = data.data.filter(item => 
+    !tempArray.some(existingData => 
+      existingData.data.some(existingItem => existingItem.unix === item.unix))
+  );
 
-  res.status(201).json({ message: 'Data received', data: data });
+  if (newData.length > 0) {
+    data.data = newData;
+    tempArray.push(data);
+    res.status(201).json({ message: 'Data received', data: data });
+  } else {
+    res.status(409).json({ message: 'Duplicate data', data: data });
+  }
 });
 
 app.post('/data1', (req, res) => {
   if (!Array.isArray(req.body)) {
-    console.log("reqbody de sıkıntı var");
+    console.log("Gelen veride hata var!!!");
   }
   receivedData = req.body;
   res.status(200).send('Veri alındı');
@@ -93,8 +105,7 @@ app.get('/data', (req, res) => {
   if (!Array.isArray(receivedData)) {
     return res.status(400).json({ error: 'Geçersiz veri formatı' });
   }
-  console.log('Gelen veri (get /data):', JSON.stringify(receivedData, null, 2));
-
+  console.log(`http://localhost:${process.env.PORT}`);
   const uniqueUnixValues = new Set();
 
   const uniqueData = [];
@@ -116,10 +127,14 @@ app.get('/data', (req, res) => {
     }
   });
 
-  const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
-
-  console.log('Sorted Data:', JSON.stringify(sortedData, null, 2));
-  res.json(sortedData);
+  if (uniqueData.length != 0) {
+    const sortedData = uniqueData.sort((a, b) => a.requestTime - b.requestTime);
+    res.json(sortedData);
+  }
+  else{
+    const sortedData = tempArray.sort((a, b) => a.requestTime - b.requestTime);
+    res.json(sortedData);
+  }
 });
 
 app.listen(port, () => {

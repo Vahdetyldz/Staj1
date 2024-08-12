@@ -50,8 +50,6 @@
         const response = await fetch(`${currentUrl}/data`);
         const data = await response.json();
 
-        console.log('Received Data:', data);
-
         if (!Array.isArray(data)) {
           throw new Error('Index.htmlde bir hata var');
         }
