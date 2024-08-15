@@ -10,7 +10,6 @@ async function getConfig(fetch) {
   const port = process.env.PORT || 3000;  // process.env.PORT kullanarak port alıyoruz
   const baseUrl = `http://localhost:${port}`;
   const response = await fetch(`${baseUrl}/config`);
-  console.log(`http://localhost:${process.env.PORT}`);
   if (!response.ok) {
     throw new Error('Network response for config was not ok');
   }

@@ -22,7 +22,7 @@ app.use((req, res, next) => {
     });
     req.on('end', () => {
       try {
-        data = data.replace(/:\s*NaN/g, ': "NaN"');
+        data = data.replace(/:\s*(NaN|naN|nan|Nan)/g, ': "NaN"');
         req.body = JSON.parse(data);
         next();
       } catch (e) {
@@ -105,7 +105,6 @@ app.get('/data', (req, res) => {
   if (!Array.isArray(receivedData)) {
     return res.status(400).json({ error: 'Geçersiz veri formatı' });
   }
-  console.log(`http://localhost:${process.env.PORT}`);
   const uniqueUnixValues = new Set();
 
   const uniqueData = [];
